@@ -3,6 +3,8 @@ io.stdout:setvbuf('no');
 
 --love.graphics.setDefaultFilter( "nearest" )
 
+--BITE EN BOAAAAAAAAAAAAAAAAAAAAAAAAAA
+
 function love.load()
   --DIMENSIONS DE LA FENETRE
   windowWidth = love.graphics.getWidth();
