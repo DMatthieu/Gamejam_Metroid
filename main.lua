@@ -180,7 +180,7 @@ function love.update(dt)
     if key=="escape" then
         love.event.quit()
         
-    elseif key=="z" then
+    elseif key=="space" then
       if player.state == "normal" then
       jumpplayer(dt)
       end
