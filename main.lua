@@ -8,7 +8,10 @@ function love.load()
     windowWidth = love.graphics.getWidth();
     windowHeight = love.graphics.getHeight();
 
+    --include otherfile
     
+    module_menu = require "menu"--on met pas.lua pour le chemin du fichier.
+
 end
 
 function love.update(dt)
