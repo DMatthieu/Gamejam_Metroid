@@ -28,14 +28,14 @@ function love.load()
 
   tilemap1 = {}
 
-  tilemap1[1]  = {0,0,0,0,0,0,1,0,0,0,0,0,0,0}
+  tilemap1[1]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
   tilemap1[2]  = {0,0,0,0,0,0,0,0,0,2,0,0,0,0}
-  tilemap1[3]  = {0,0,0,0,1,0,0,0,0,0,0,0,0,0}
-  tilemap1[4]  = {1,1,0,0,0,1,1,1,1,1,1,1,0,0}
+  tilemap1[3]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+  tilemap1[4]  = {0,0,0,0,0,0,1,1,1,1,1,1,0,0}
   tilemap1[5]  = {0,0,1,0,0,0,0,0,0,0,0,0,0,0}
   tilemap1[6]  = {1,1,1,1,1,1,0,0,0,0,0,0,0,0}
   tilemap1[7]  = {0,0,0,0,1,0,0,0,0,2,0,2,0,0}
-  tilemap1[8]  = {1,0,0,0,0,1,1,1,1,1,1,1,1,0}
+  tilemap1[8]  = {0,0,0,0,0,1,1,1,1,1,1,1,1,0}
   tilemap1[9]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
   tilemap1[10] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 
@@ -60,8 +60,8 @@ function love.load()
     player.vy = 0
     --player.friction = 100
     player.speed = 3
-    player.gravity = 3
-    player.jump = 100
+    player.gravity = 20
+    player.jump = 400
     player.state = "falling"
 
     timerjumping = 0
@@ -87,7 +87,7 @@ function love.update(dt)
         
       else
         
-        player.vy = -1
+        player.vy = player.vy - player.jump*dt  --application d'une force de saut fixe
         
         player.state = "jumping"
         
@@ -100,38 +100,61 @@ function love.update(dt)
   end
 
   
+  -- début de la gestion de la physique joueur
+  
+    -- physique horizontale
 
-  for a = 1, player.speed, 1 do
+  for a = 1, player.speed, 1 do       -- pour chaque pixel de déplacement en fonction de la vitesse du joueur
     
+    checkcollisionfenetre()           -- je vérifie la collision avec le bord de la fenêtre
     
-    
-    checkcollisionfenetre()
-    
-    collisionmurs(player)
-    
-    physicplayer()
+    collisionmurs(player)             -- je vérifie la collision avec les murs formés par ma hitboxmap
     
   end
   
-  for a = 1, player.gravity, 1 do
+    -- physique verticale
+  
+  if player.state == "falling" or player.state == "jumping" then
     
-    collisionhautbas(player)
+    player.vy = player.vy + player.gravity*dt  -- si le joueur saute ou tombe on lui applique une gravité
     
-    player.y = player.y + player.vy
+  end
+  
+  
+  
+  collisionhautbas(player)   -- premier test de détermination de l'état du joueur
+  
+  physicplayer()             -- attribution d'un vy en fonction de l'état (voir fonction)
+  
+  if player.vy ~= 0 then     -- si mon joueur est en déplacement vertical alors boucle de déplacement
     
-    if timerjumping > 0 then
-      timerjumping = timerjumping - 1
-    end
-    
-    if player.state == "jumping" then
-      if timerjumping == 0 then
-        player.state = "falling"
+    for a = 1, math.abs(player.vy), 1 do   -- j'effectue un déplacement pixel par pixel égal à ma vitesse de déplacement verticale (vy)
+      
+      checkcollisionfenetre()              -- Pour chaque pixel : -- je vérifie les bords de la fenêtre
+      
+      collisionhautbas(player)                                    -- je vérifie les collisions avec les hitbox qui modifient l'état du joueur si besoin (voir fonction)
+      
+      physicplayer()                                              -- j'annule la gravité si nécessaire
+      
+      if player.vy > 0 then                                       -- en fonction de mon vy je déplace le joueur : 
+        
+        player.y = player.y + 1                                         -- vers le bas
+        
+      elseif player.vy < 0 then
+        
+        player.y = player.y - 1                                         -- vers le haut
+        
+      elseif player.vy == 0 then
+        
+        break                                                           -- si pas de déplacement à faire (collision bas) : fin prématurée de la boucle de déplacement 
+        
       end
+      
     end
     
   end
   
-  
+  -- fin de la gestion de la physique joueur
   
 end
 
@@ -195,6 +218,7 @@ end
       player.y = 0
       if player.vy < 0 then
         player.vy = 0
+        player.state = "falling"
       end
     end
    
@@ -208,6 +232,7 @@ end
       player.y = windowHeight - player.h
       if player.vy > 0 then
         player.vy = 0
+        player.state = "normal"
       end
     end
    
@@ -232,32 +257,28 @@ end
   
   
   
-  function collisionmurs(player)
+  function collisionmurs(player)  -- test collision gauche et droite du joueur
     
-    --if player ~= nil then
-      
-      -- for player
-        
-          if love.keyboard.isDown("q") then
+          if love.keyboard.isDown("q") then -- gauche
             
             local collisiongauche = false
             
-            for a = 1, #hitboxmap, 1 do                            -- check de la collision avec chaque cube touche Z
+            for a = 1, #hitboxmap, 1 do
               
-              if player.y > hitboxmap[a].y - player.h and  -- test des 4 côtés
+              if player.y > hitboxmap[a].y - player.h and
               player.y < hitboxmap[a].y + hitboxmap[a].h and
               player.x > hitboxmap[a].x - player.w and
               player.x <= hitboxmap[a].x + hitboxmap[a].w then
                 hitboxmap[a].coll = true
               end
               
-              if hitboxmap[a].coll == true then                 -- si collision alors position fixée
+              if hitboxmap[a].coll == true then
                 player.x = hitboxmap[a].x + hitboxmap[a].w
                 collisiongauche = true
               end
               
               
-            end  -- fin du for des collisions touche Z
+            end
             
             if collisiongauche == false then
               player.x = player.x - 1  
@@ -269,26 +290,26 @@ end
           
           
           
-          if love.keyboard.isDown("d") then
+          if love.keyboard.isDown("d") then  -- droite
             
             local collisiondroite = false
             
-            for a = 1, #hitboxmap, 1 do                            -- check de la collision avec chaque cube touche Z
+            for a = 1, #hitboxmap, 1 do
               
-              if player.y > hitboxmap[a].y - player.h and  -- test des 4 côtés
+              if player.y > hitboxmap[a].y - player.h and
               player.y < hitboxmap[a].y + hitboxmap[a].h and
               player.x >= hitboxmap[a].x - player.w and
               player.x < hitboxmap[a].x + hitboxmap[a].w then
                 hitboxmap[a].coll = true
               end
               
-              if hitboxmap[a].coll == true then                 -- si collision alors position fixée
+              if hitboxmap[a].coll == true then
                 player.x = hitboxmap[a].x - player.w
                 collisiondroite = true
               end
               
               
-            end  -- fin du for des collisions touche Z
+            end
             
             if collisiondroite == false then
               player.x = player.x + 1  
@@ -297,36 +318,16 @@ end
             resetcollisions() 
             
           end    
-          
-        --end
-        
-      --end
-      
-    --end
-    
-  end
+         
+  end              -- fin du test collision gauche droite
   
   
   
   function physicplayer()
     
-    if player.state == "falling" then
-      
-      player.vy = 1
-      
-    elseif player.state == "normal" then
+    if player.state == "normal" or player.state == "climbing" then
       
       player.vy = 0
-      
-    elseif player.state == "jumping" then 
-      
-      timerjumping = timerjumping - 1
-      
-      if timerjumping == 0 then
-        
-        player.state = "falling"
-        
-      end
       
     end
     
@@ -335,15 +336,15 @@ end
   
   
   
-  function collisionhautbas(player)
+  function collisionhautbas(player)  -- test de collision haut ou bas
     
-    if player.vy < 0 then
+    if player.vy < 0 then                   -- haut
       
       local collisionhaut = false
       
-      for a = 1, #hitboxmap, 1 do                            -- check de la collision avec chaque cube touche Z
+      for a = 1, #hitboxmap, 1 do
         
-        if player.y > hitboxmap[a].y - player.h and  -- test des 4 côtés
+        if player.y > hitboxmap[a].y - player.h and
         player.y <= hitboxmap[a].y + hitboxmap[a].h and
         player.x > hitboxmap[a].x - player.w and
         player.x < hitboxmap[a].x + hitboxmap[a].w then
@@ -352,16 +353,16 @@ end
           
         end
         
-        if hitboxmap[a].coll == true then                 -- si collision alors position fixée
+        if hitboxmap[a].coll == true then
           player.y = hitboxmap[a].y + hitboxmap[a].h
           collisionhaut = true
         end
         
         
-      end  -- fin du for des collisions touche Z
+      end
       
       if collisionhaut == true then
-        player.vy = 1
+        player.vy = 0
         player.state = "falling"
       end
       
@@ -370,32 +371,32 @@ end
     end
     
     
-    if player.vy >= 0 then
+    if player.vy >= 0 then                   -- bas
       
       local collisionbas = false
       
-      for a = 1, #hitboxmap, 1 do                            -- check de la collision avec chaque cube touche Z
+      for a = 1, #hitboxmap, 1 do
         
-        if player.y >= hitboxmap[a].y - player.h and  -- test des 4 côtés
+        if player.y >= hitboxmap[a].y - player.h and
         player.y < hitboxmap[a].y + hitboxmap[a].h and
         player.x > hitboxmap[a].x - player.w and
         player.x < hitboxmap[a].x + hitboxmap[a].w then
           hitboxmap[a].coll = true
         end
         
-        if hitboxmap[a].coll == true then                 -- si collision alors position fixée
+        if hitboxmap[a].coll == true then
           player.y = hitboxmap[a].y - player.h
           collisionbas = true
         end
         
-      end  -- fin du for des collisions touche Z
+      end
       
       if collisionbas == true then
-        player.vy = 0
+        
         player.state = "normal"
         
       elseif collisionbas == false then
-        player.vy = 1
+        
         player.state = "falling"
         
       end
@@ -405,8 +406,4 @@ end
     end
     
   end
-
-
---Permit Game Extinction
-
 
