@@ -405,5 +405,5 @@ end
       
     end
     
-  end
+  end                   -- fin du test collision haut et bas 
 
