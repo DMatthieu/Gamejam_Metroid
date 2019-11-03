@@ -30,11 +30,11 @@ function love.load()
 
   tilemap1[1]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
   tilemap1[2]  = {0,0,0,0,0,0,0,0,0,2,0,0,0,0}
-  tilemap1[3]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
-  tilemap1[4]  = {0,0,0,0,0,0,1,1,1,1,1,1,0,0}
-  tilemap1[5]  = {0,0,1,0,0,0,0,0,0,0,0,0,0,0}
+  tilemap1[3]  = {0,2,2,0,2,0,0,0,0,0,0,0,0,0}
+  tilemap1[4]  = {0,2,2,2,0,0,0,1,1,1,1,1,0,0}
+  tilemap1[5]  = {0,0,1,2,0,0,0,0,0,0,0,0,0,0}
   tilemap1[6]  = {1,1,1,1,1,1,0,0,0,0,0,0,0,0}
-  tilemap1[7]  = {0,0,0,0,1,0,0,0,0,2,0,2,0,0}
+  tilemap1[7]  = {0,0,0,0,1,0,1,0,0,2,0,2,0,0}
   tilemap1[8]  = {0,0,0,0,0,1,1,1,1,0,0,0,0,0}
   tilemap1[9]  = {0,0,0,0,0,0,0,0,0,1,1,1,0,0}
   tilemap1[10] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1}
@@ -91,7 +91,7 @@ function love.update(dt)
         
         player.state = "jumping"
         
-        -- timerjumping = player.jump  --  voir plus tard
+        -- timerjumping = player.jump  --  voir plus tard !!!!!!!!!!!!!!!
         
       end
       
@@ -110,13 +110,15 @@ function love.update(dt)
   
   collisionmurs(player)   -- premier check de collision avec les murs
 
-  for a = 1, math.abs(player.vx), 1 do       -- pour chaque pixel de déplacement en fonction de la vitesse du joueur
+  if vx ~= 0 then
     
-    checkcollisionfenetre()           -- je vérifie la collision avec le bord de la fenêtre
-    
-    collisionmurs(player)             -- je vérifie la collision avec les murs formés par ma hitboxmap
-    
-    if player.vx > 0 then                                       -- en fonction de mon vx je déplace le joueur : 
+    for a = 1, math.abs(player.vx), 1 do       -- pour chaque pixel de déplacement en fonction de la vitesse du joueur
+      
+      checkcollisionfenetre()           -- je vérifie la collision avec le bord de la fenêtre
+      
+      collisionmurs(player)             -- je vérifie la collision avec les murs formés par ma hitboxmap
+      
+      if player.vx > 0 then                                       -- en fonction de mon vx je déplace le joueur : 
         
         player.x = player.x + 1                                         -- vers la droite
         
@@ -129,6 +131,8 @@ function love.update(dt)
         break                                                           -- si pas de déplacement à faire (collision) : fin prématurée de la boucle de déplacement 
         
       end
+      
+    end
     
   end
   
@@ -138,6 +142,12 @@ function love.update(dt)
   if player.state == "falling" or player.state == "jumping" then
     
     player.vy = player.vy + player.gravity*dt  -- si le joueur saute ou tombe on lui applique une gravité
+    
+    if player.state == "jumping" and player.vy > 0 then
+      
+      player.state = "falling"
+      
+    end
     
   end
   
@@ -216,7 +226,7 @@ end
       
       for b = 1, 14, 1 do
         
-        if tilemap[a][b] == 1 then       -- A AMELIORER !!!!!!!!!!!!!!!!! pour intégrer tous les types de tiles
+        if tilemap[a][b] ~= 0 then       -- A AMELIORER !!!!!!!!!!!!!!!!! pour intégrer tous les types de tiles
           
           hitboxmap[#hitboxmap + 1] = {}
             
@@ -225,7 +235,7 @@ end
             hitboxmap[#hitboxmap].w = tilesize
             hitboxmap[#hitboxmap].h = tilesize
             hitboxmap[#hitboxmap].coll = false
-            -- hitboxmap[#hitboxmap].state = tilemap[a][b]  -- compris dans la future amélioration ne pas en tenir compte pour le moment
+            hitboxmap[#hitboxmap].state = tilemap[a][b]  -- compris dans la future amélioration ne pas en tenir compte pour le moment
           
         end
         
@@ -345,6 +355,8 @@ end
             
             for a = 1, #hitboxmap, 1 do
               
+              if hitboxmap[a].state == 1 then
+              
               if player.y > hitboxmap[a].y - player.h and
               player.y < hitboxmap[a].y + hitboxmap[a].h and
               player.x > hitboxmap[a].x - player.w and
@@ -357,6 +369,7 @@ end
                 collisiongauche = true
               end
               
+              end
               
             end
             
@@ -380,6 +393,8 @@ end
             
             for a = 1, #hitboxmap, 1 do
               
+              if hitboxmap[a].state == 1 then
+              
               if player.y > hitboxmap[a].y - player.h and
               player.y < hitboxmap[a].y + hitboxmap[a].h and
               player.x >= hitboxmap[a].x - player.w and
@@ -392,6 +407,7 @@ end
                 collisiondroite = true
               end
               
+              end
               
             end
             
@@ -432,6 +448,8 @@ end
       
       for a = 1, #hitboxmap, 1 do
         
+        if hitboxmap[a].state == 1 then
+        
         if player.y > hitboxmap[a].y - player.h and
         player.y <= hitboxmap[a].y + hitboxmap[a].h and
         player.x > hitboxmap[a].x - player.w and
@@ -446,6 +464,7 @@ end
           collisionhaut = true
         end
         
+        end
         
       end
       
@@ -465,6 +484,8 @@ end
       
       for a = 1, #hitboxmap, 1 do
         
+        if hitboxmap[a].state == 1 then
+        
         if player.y >= hitboxmap[a].y - player.h and
         player.y < hitboxmap[a].y + hitboxmap[a].h and
         player.x > hitboxmap[a].x - player.w and
@@ -475,6 +496,26 @@ end
         if hitboxmap[a].coll == true then
           player.y = hitboxmap[a].y - player.h
           collisionbas = true
+        end
+        
+        elseif hitboxmap[a].state == 2 then
+        
+        if player.y == hitboxmap[a].y - player.h then
+          
+          if player.y >= hitboxmap[a].y - player.h and
+        player.y < hitboxmap[a].y + hitboxmap[a].h and
+        player.x > hitboxmap[a].x - player.w and
+        player.x < hitboxmap[a].x + hitboxmap[a].w then
+          hitboxmap[a].coll = true
+        end
+        
+        if hitboxmap[a].coll == true then
+          player.y = hitboxmap[a].y - player.h
+          collisionbas = true
+        end
+          
+        end
+        
         end
         
       end
