@@ -91,8 +91,6 @@ function love.update(dt)
         
         player.state = "jumping"
         
-        -- timerjumping = player.jump  --  voir plus tard !!!!!!!!!!!!!!!
-        
       end
       
     end
@@ -226,7 +224,7 @@ end
       
       for b = 1, 14, 1 do
         
-        if tilemap[a][b] ~= 0 then       -- A AMELIORER !!!!!!!!!!!!!!!!! pour intégrer tous les types de tiles
+        if tilemap[a][b] ~= 0 then
           
           hitboxmap[#hitboxmap + 1] = {}
             
@@ -235,7 +233,7 @@ end
             hitboxmap[#hitboxmap].w = tilesize
             hitboxmap[#hitboxmap].h = tilesize
             hitboxmap[#hitboxmap].coll = false
-            hitboxmap[#hitboxmap].state = tilemap[a][b]  -- compris dans la future amélioration ne pas en tenir compte pour le moment
+            hitboxmap[#hitboxmap].state = tilemap[a][b]
           
         end
         
@@ -247,7 +245,7 @@ end
   
   
   
-  function checkcollisionfenetre()   -- Création de la fonction de collision des murs
+  function checkcollisionfenetre()   -- Création de la fonction de collision bord de la fenêtre
     
     if player.y <= 0 then
       player.y = 0
@@ -276,7 +274,7 @@ end
       player.x = windowWidth - player.w
     end
     
-  end  -- fin de création de la fonction de collision des murs
+  end  -- fin de création de la fonction de collision bord de la fenêtre
   
   
   
@@ -440,7 +438,7 @@ end
   
   
   
-  function collisionhautbas(player)  -- test de collision haut ou bas
+  function collisionhautbas(player)  -- test de collision haut ou bas du joueur
     
     if player.vy < 0 then                   -- haut
       
