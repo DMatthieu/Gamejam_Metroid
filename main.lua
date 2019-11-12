@@ -10,7 +10,7 @@ function love.load()
 
     --include otherfile
     
-    module_menu = require "menu"--on met pas.lua pour le chemin du fichier.
+    --module_menu = require "menu"--on met pas.lua pour le chemin du fichier.
 
 end
 
