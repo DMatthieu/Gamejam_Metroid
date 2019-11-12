@@ -29,14 +29,14 @@ function love.load()
   tilemap1 = {}
 
   tilemap1[1]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
-  tilemap1[2]  = {0,0,0,0,0,0,0,0,0,2,0,0,0,0}
-  tilemap1[3]  = {0,2,2,0,2,0,0,0,0,0,0,0,0,0}
-  tilemap1[4]  = {0,2,2,2,0,0,0,1,1,1,1,1,0,0}
-  tilemap1[5]  = {0,0,1,2,0,0,0,0,0,0,0,0,0,0}
-  tilemap1[6]  = {1,1,1,1,1,1,0,0,0,0,0,0,0,0}
-  tilemap1[7]  = {0,0,0,0,1,0,1,0,0,2,0,2,0,0}
-  tilemap1[8]  = {0,0,0,0,0,1,1,1,1,0,0,0,0,0}
-  tilemap1[9]  = {0,0,0,0,0,0,0,0,0,1,1,1,0,0}
+  tilemap1[2]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+  tilemap1[3]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+  tilemap1[4]  = {0,0,0,0,0,0,0,1,1,1,1,1,0,0}
+  tilemap1[5]  = {0,0,1,1,1,0,0,0,0,0,0,0,0,0}
+  tilemap1[6]  = {1,1,1,1,1,0,0,0,0,0,0,0,0,0}
+  tilemap1[7]  = {0,0,0,0,1,1,0,0,0,0,0,0,0,0}
+  tilemap1[8]  = {0,0,0,0,0,1,1,0,0,0,1,0,0,1}
+  tilemap1[9]  = {0,0,0,0,0,0,0,0,0,0,0,1,0,1}
   tilemap1[10] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 
 
@@ -64,6 +64,9 @@ function love.load()
     player.gravity = 20
     player.jump = 400
     player.state = "falling"
+    player.side = "right"
+    player.climbx = "none"
+    player.climby = "none"
 
     timerjumping = 0
 
@@ -72,7 +75,6 @@ function love.load()
   end
   
 end
-
 -------------------------------------------------------------------------------------------------
 
 
@@ -85,7 +87,7 @@ function love.update(dt)
     
     if key == "space" then  -- pour le saut
       
-      if player.state ~= "jumping" and player.state ~= "falling" then -- si personnage n'est pas déja en l'air
+      if player.state ~= "jumping" and player.state ~= "falling" and player.state ~= "climbing" then -- si personnage n'est pas déja en l'air ou en train de grimper
         
         player.vy = player.vy - player.jump*dt  -- alors application d'une force de saut donnée
         
@@ -97,95 +99,103 @@ function love.update(dt)
     
   end
 
-  
-  -- début de la gestion de la physique du joueur
-  
-    -- physique horizontale
-  
-  move(dt, player)    -- fonction de déplacement avec friction en cas d'arrêt hors saut
-  
-  checkcollisionfenetre()  -- premier check de collision du bord de la fenêtre
-  
-  collisionmurs(player)   -- premier check de collision avec les murs
 
-  if vx ~= 0 then
+-- début de la gestion de la physique du joueur
+
+  if player.state ~= "climbing" then
     
-    for a = 1, math.abs(player.vx), 1 do       -- pour chaque pixel de déplacement en fonction de la vitesse du joueur
+      -- physique horizontale
+    
+    move(dt, player)    -- fonction de déplacement avec friction en cas d'arrêt hors saut
+    
+    checkcollisionfenetre()  -- premier check de collision du bord de la fenêtre
+    
+    collisionmurs(player)   -- premier check de collision avec les murs
+    
+    if vx ~= 0 then
       
-      checkcollisionfenetre()           -- je vérifie la collision avec le bord de la fenêtre
-      
-      collisionmurs(player)             -- je vérifie la collision avec les murs formés par ma hitboxmap
-      
-      if player.vx > 0 then                                       -- en fonction de mon vx je déplace le joueur : 
+      for a = 1, math.abs(player.vx), 1 do       -- pour chaque pixel de déplacement en fonction de la vitesse du joueur
         
-        player.x = player.x + 1                                         -- vers la droite
+        checkcollisionfenetre()           -- je vérifie la collision avec le bord de la fenêtre
         
-      elseif player.vx < 0 then
+        collisionmurs(player)             -- je vérifie la collision avec les murs formés par ma hitboxmap
         
-        player.x = player.x - 1                                         -- vers la gauche
-        
-      elseif player.vx == 0 then
-        
-        break                                                           -- si pas de déplacement à faire (collision) : fin prématurée de la boucle de déplacement 
+        if player.vx > 0 then                                       -- en fonction de mon vx je déplace le joueur : 
+          
+          player.x = player.x + 1                                         -- vers la droite
+          
+        elseif player.vx < 0 then
+          
+          player.x = player.x - 1                                         -- vers la gauche
+          
+        elseif player.vx == 0 then
+          
+          break                                                           -- si pas de déplacement à faire (collision) : fin prématurée de la boucle de déplacement 
+          
+        end
         
       end
       
     end
     
-  end
-  
-  
-    -- physique verticale
-  
-  if player.state == "falling" or player.state == "jumping" then
     
-    player.vy = player.vy + player.gravity*dt  -- si le joueur saute ou tombe on lui applique une gravité
+      -- physique verticale
     
-    if player.state == "jumping" and player.vy > 0 then
+    if player.state == "falling" or player.state == "jumping" then
       
-      player.state = "falling"
+      player.vy = player.vy + player.gravity*dt  -- si le joueur saute ou tombe on lui applique une gravité
       
-    end
-    
-  end
-  
-  
-  collisionhautbas(player)   -- premier test de détermination de l'état du joueur
-  
-  physicplayer()             -- attribution d'un vy en fonction de l'état (voir fonction)
-  
-  if player.vy ~= 0 then     -- si mon joueur est en déplacement vertical alors boucle de déplacement
-    
-    for a = 1, math.abs(player.vy), 1 do   -- j'effectue un déplacement pixel par pixel égal à ma vitesse de déplacement verticale (vy)
-      
-      checkcollisionfenetre()              -- Pour chaque pixel : -- je vérifie les bords de la fenêtre
-      
-      collisionhautbas(player)                                    -- je vérifie les collisions avec les hitbox qui modifient l'état du joueur si besoin (voir fonction)
-      
-      physicplayer()                                              -- j'annule la gravité si nécessaire
-      
-      if player.vy > 0 then                                       -- en fonction de mon vy je déplace le joueur : 
+      if player.state == "jumping" and player.vy > 0 then
         
-        player.y = player.y + 1                                         -- vers le bas
-        
-      elseif player.vy < 0 then
-        
-        player.y = player.y - 1                                         -- vers le haut
-        
-      elseif player.vy == 0 then
-        
-        break                                                           -- si pas de déplacement à faire (collision bas) : fin prématurée de la boucle de déplacement 
+        player.state = "falling"
         
       end
       
     end
     
-  end
+    
+    collisionhautbas(player)   -- premier test de détermination de l'état du joueur
+    
+    physicplayer()             -- attribution d'un vy en fonction de l'état (voir fonction)
+    
+    if player.vy ~= 0 then     -- si mon joueur est en déplacement vertical alors boucle de déplacement
+      
+      for a = 1, math.abs(player.vy), 1 do   -- j'effectue un déplacement pixel par pixel égal à ma vitesse de déplacement verticale (vy)
+        
+        checkcollisionfenetre()              -- Pour chaque pixel : -- je vérifie les bords de la fenêtre
+        
+        collisionhautbas(player)                                    -- je vérifie les collisions avec les hitbox qui modifient l'état du joueur si besoin (voir fonction)
+        
+        physicplayer()                                              -- j'annule la gravité si nécessaire
+        
+        if player.vy > 0 then                                       -- en fonction de mon vy je déplace le joueur : 
+          
+          player.y = player.y + 1                                         -- vers le bas
+          
+        elseif player.vy < 0 then
+          
+          player.y = player.y - 1                                         -- vers le haut
+          
+        elseif player.vy == 0 then
+          
+          break                                                           -- si pas de déplacement à faire (collision bas) : fin prématurée de la boucle de déplacement 
+          
+        end
+        
+      end
+      
+    end
+    
+  end -- fin de la gestion de la physique joueur
   
-  -- fin de la gestion de la physique joueur
   
+  -- Gestion de l'effet climb
+
+  climb(player)
+  
+  print(player.side)
+
 end
-
 -------------------------------------------------------------------------------------------------
 
 
@@ -281,8 +291,10 @@ end
   function move(dt, player) 
     
     if player.state == "normal" then
-        
+      
       if love.keyboard.isDown("q") then
+        
+        player.side = "left"
         
         player.vx = player.vx - player.accel*dt
         
@@ -293,6 +305,8 @@ end
         end
         
       elseif love.keyboard.isDown("d") then
+        
+        player.side = "right"
         
         player.vx = player.vx + player.accel*dt
         
@@ -347,80 +361,146 @@ end
   
   function collisionmurs(player)  -- test collision gauche et droite du joueur
     
-          if love.keyboard.isDown("q") then -- gauche
-            
-            local collisiongauche = false
-            
-            for a = 1, #hitboxmap, 1 do
-              
-              if hitboxmap[a].state == 1 then
-              
-              if player.y > hitboxmap[a].y - player.h and
-              player.y < hitboxmap[a].y + hitboxmap[a].h and
-              player.x > hitboxmap[a].x - player.w and
-              player.x <= hitboxmap[a].x + hitboxmap[a].w then
-                hitboxmap[a].coll = true
-              end
-              
-              if hitboxmap[a].coll == true then
-                player.x = hitboxmap[a].x + hitboxmap[a].w
-                collisiongauche = true
-              end
-              
-              end
-              
-            end
-            
-            if collisiongauche == false then
-              
-            else             ------------------------------- EFFET CLIMBING A AJOUTER
-              
-              player.vx = 0
-              
-            end
-            
-            resetcollisions() 
-            
-          end    
+    if player.vx <= 0 then -- gauche
+      
+      local collisiongauche = false
+      
+      for a = 1, #hitboxmap, 1 do
+        
+        if player.y > hitboxmap[a].y - player.h and
+        player.y < hitboxmap[a].y + hitboxmap[a].h and
+        player.x > hitboxmap[a].x - player.w and
+        player.x <= hitboxmap[a].x + hitboxmap[a].w then
+          hitboxmap[a].coll = true
+        end
+        
+        if hitboxmap[a].state == 1 then
           
-          
-          
-          if love.keyboard.isDown("d") then  -- droite
+          if hitboxmap[a].coll == true then
+            player.x = hitboxmap[a].x + hitboxmap[a].w
+            collisiongauche = true
             
-            local collisiondroite = false
-            
-            for a = 1, #hitboxmap, 1 do
+            if player.y < hitboxmap[a].y and player.y >= hitboxmap[a].y - player.h and love.keyboard.isDown("q") then
               
-              if hitboxmap[a].state == 1 then
-              
-              if player.y > hitboxmap[a].y - player.h and
-              player.y < hitboxmap[a].y + hitboxmap[a].h and
-              player.x >= hitboxmap[a].x - player.w and
-              player.x < hitboxmap[a].x + hitboxmap[a].w then
-                hitboxmap[a].coll = true
-              end
-              
-              if hitboxmap[a].coll == true then
-                player.x = hitboxmap[a].x - player.w
-                collisiondroite = true
-              end
-              
+              if player.state ~= "climbing" and player.side == "left" then
+                
+                player.climbx = hitboxmap[a].x
+                
+                player.climby = hitboxmap[a].y
+                
+                local climbing = true
+                
+                for a = 1, #hitboxmap, 1 do
+                  
+                  if hitboxmap[a].x == player.climbx and hitboxmap[a].y == player.climby - tilesize then
+                    
+                    climbing = false
+                    
+                  end
+                  
+                end
+                
+                if climbing == true then
+                  
+                  player.state = "climbing"  -- check de faisabilité à faire
+                  
+                end
+                
+                climbing = true
+                
               end
               
             end
             
-            if collisiondroite == false then
-              
-            else             ------------------------------- EFFET CLIMBING A AJOUTER
-              
-              player.vx = 0
-              
-            end
-            
-            resetcollisions() 
-            
-          end    
+          end
          
+        end
+        
+      end
+      
+      if collisiongauche == false then
+        
+      else
+        
+        player.vx = 0
+       
+      end
+      
+      resetcollisions() 
+      
+    end    
+    
+    
+    
+    if player.vx >= 0 then  -- droite
+      
+      local collisiondroite = false
+      
+      for a = 1, #hitboxmap, 1 do
+        
+        if hitboxmap[a].state == 1 then
+          
+          if player.y > hitboxmap[a].y - player.h and
+          player.y < hitboxmap[a].y + hitboxmap[a].h and
+          player.x >= hitboxmap[a].x - player.w and
+          player.x < hitboxmap[a].x + hitboxmap[a].w then
+            hitboxmap[a].coll = true
+          end
+          
+          if hitboxmap[a].coll == true then
+            player.x = hitboxmap[a].x - player.w
+            collisiondroite = true
+            
+            if player.y < hitboxmap[a].y and player.y >= hitboxmap[a].y - player.h and love.keyboard.isDown("d") then
+              
+              if player.state ~= "climbing" and player.side == "right" then
+                
+                player.climbx = hitboxmap[a].x
+                
+                player.climby = hitboxmap[a].y
+                
+                local climbing = true
+                
+                for a = 1, #hitboxmap, 1 do
+                  
+                  if hitboxmap[a].x == player.climbx and hitboxmap[a].y == player.climby - tilesize then
+                    
+                    climbing = false
+                    
+                  end
+                  
+                end
+                
+                if climbing == true then
+                  
+                  player.state = "climbing"  -- check de faisabilité à faire
+                  
+                end
+                
+                climbing = true
+                
+              end
+              
+            end
+            
+          end
+          
+        end
+        
+      end
+      
+      if collisiondroite == false then
+        
+      else
+        
+        player.vx = 0
+       
+      end
+     
+      resetcollisions() 
+      
+    end    
+    
   end              -- fin du test collision gauche droite
   
   
@@ -447,21 +527,21 @@ end
       for a = 1, #hitboxmap, 1 do
         
         if hitboxmap[a].state == 1 then
-        
-        if player.y > hitboxmap[a].y - player.h and
-        player.y <= hitboxmap[a].y + hitboxmap[a].h and
-        player.x > hitboxmap[a].x - player.w and
-        player.x < hitboxmap[a].x + hitboxmap[a].w then
           
-          hitboxmap[a].coll = true
+          if player.y > hitboxmap[a].y - player.h and
+          player.y <= hitboxmap[a].y + hitboxmap[a].h and
+          player.x > hitboxmap[a].x - player.w and
+          player.x < hitboxmap[a].x + hitboxmap[a].w then
+            
+            hitboxmap[a].coll = true
+            
+          end
           
-        end
-        
-        if hitboxmap[a].coll == true then
-          player.y = hitboxmap[a].y + hitboxmap[a].h
-          collisionhaut = true
-        end
-        
+          if hitboxmap[a].coll == true then
+            player.y = hitboxmap[a].y + hitboxmap[a].h
+            collisionhaut = true
+          end
+          
         end
         
       end
@@ -483,37 +563,37 @@ end
       for a = 1, #hitboxmap, 1 do
         
         if hitboxmap[a].state == 1 then
-        
-        if player.y >= hitboxmap[a].y - player.h and
-        player.y < hitboxmap[a].y + hitboxmap[a].h and
-        player.x > hitboxmap[a].x - player.w and
-        player.x < hitboxmap[a].x + hitboxmap[a].w then
-          hitboxmap[a].coll = true
-        end
-        
-        if hitboxmap[a].coll == true then
-          player.y = hitboxmap[a].y - player.h
-          collisionbas = true
-        end
-        
-        elseif hitboxmap[a].state == 2 then
-        
-        if player.y == hitboxmap[a].y - player.h then
           
           if player.y >= hitboxmap[a].y - player.h and
-        player.y < hitboxmap[a].y + hitboxmap[a].h and
-        player.x > hitboxmap[a].x - player.w and
-        player.x < hitboxmap[a].x + hitboxmap[a].w then
-          hitboxmap[a].coll = true
-        end
-        
-        if hitboxmap[a].coll == true then
-          player.y = hitboxmap[a].y - player.h
-          collisionbas = true
-        end
+          player.y < hitboxmap[a].y + hitboxmap[a].h and
+          player.x > hitboxmap[a].x - player.w and
+          player.x < hitboxmap[a].x + hitboxmap[a].w then
+            hitboxmap[a].coll = true
+          end
           
-        end
-        
+          if hitboxmap[a].coll == true then
+            player.y = hitboxmap[a].y - player.h
+            collisionbas = true
+          end
+          
+        elseif hitboxmap[a].state == 2 then
+          
+          if player.y == hitboxmap[a].y - player.h then
+            
+            if player.y >= hitboxmap[a].y - player.h and
+            player.y < hitboxmap[a].y + hitboxmap[a].h and
+            player.x > hitboxmap[a].x - player.w and
+            player.x < hitboxmap[a].x + hitboxmap[a].w then
+              hitboxmap[a].coll = true
+            end
+            
+            if hitboxmap[a].coll == true then
+              player.y = hitboxmap[a].y - player.h
+              collisionbas = true
+            end
+            
+          end
+          
         end
         
       end
@@ -522,7 +602,7 @@ end
         
         player.state = "normal"
         
-      elseif collisionbas == false then
+      elseif collisionbas == false and player.state ~= "climbing" then
         
         player.state = "falling"
         
@@ -533,4 +613,52 @@ end
     end
     
   end                   -- fin du test collision haut et bas 
+  
+  
+  
+  function climb(player) -- à améliorer pour ajouter les corniches en fond de map
+    
+    for a = 1, 2, 1 do
+      
+      if player.state == "climbing" then
+        
+        if player.y > player.climby - player.h then
+          
+          player.y = player.y - 1
+          
+        elseif player.y == player.climby - player.h then
+          
+          if player.side == "left" then
+            
+            if player.x > player.climbx then
+              
+              player.x = player.x - 1
+              
+            elseif player.x == player.climbx then
+              
+              player.state = "normal"
+              
+            end
+            
+          elseif player.side == "right" then
+            
+            if player.x < player.climbx then
+              
+              player.x = player.x + 1
+              
+            elseif player.x == player.climbx then
+              
+              player.state = "normal"
+              
+            end
+            
+          end
+          
+        end
+        
+      end
+      
+    end
+    
+  end
 
