@@ -29,8 +29,8 @@ function love.load()
   tilemap1 = {}
 
   tilemap1[1]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
-  tilemap1[2]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
-  tilemap1[3]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+  tilemap1[2]  = {0,0,0,0,0,0,0,0,0,0,0,1,0,0}
+  tilemap1[3]  = {0,0,0,0,0,0,0,0,0,0,0,1,0,0}
   tilemap1[4]  = {0,0,0,0,0,0,0,1,1,1,1,1,0,0}
   tilemap1[5]  = {0,0,1,1,1,0,0,0,0,0,0,0,0,0}
   tilemap1[6]  = {1,1,1,1,1,0,0,0,0,0,0,0,0,0}
@@ -58,15 +58,18 @@ function love.load()
     player.h = 32
     player.vx = 0
     player.vy = 0
-    player.friction = 300
-    player.accel = 100
+    player.friction = 30
+    player.accel = 12
     player.maxspeed = 3
     player.gravity = 20
-    player.jump = 400
+    player.jump = 360
     player.state = "falling"
     player.side = "right"
     player.climbx = "none"
     player.climby = "none"
+    player.climbspeed = 2
+    player.climbstand = 30
+    player.climbtimer = player.climbstand
 
     timerjumping = 0
 
@@ -192,8 +195,6 @@ function love.update(dt)
   -- Gestion de l'effet climb
 
   climb(player)
-  
-  print(player.side)
 
 end
 -------------------------------------------------------------------------------------------------
@@ -290,7 +291,7 @@ end
   
   function move(dt, player) 
     
-    if player.state == "normal" then
+    if player.state == "normal" then -- à ameliorer pour les demi tour
       
       if love.keyboard.isDown("q") then
         
@@ -618,9 +619,17 @@ end
   
   function climb(player) -- à améliorer pour ajouter les corniches en fond de map
     
-    for a = 1, 2, 1 do
+    
+    
+    for a = 1, player.climbspeed, 1 do
       
-      if player.state == "climbing" then
+      if player.state == "climbing" then  -- rajouter timer avant escalade
+        
+      if player.climbtimer > 0 then
+        
+        player.climbtimer = player.climbtimer - 1
+        
+      elseif player.climbtimer == 0 then
         
         if player.y > player.climby - player.h then
           
@@ -638,6 +647,8 @@ end
               
               player.state = "normal"
               
+              player.climbtimer = player.climbstand
+              
             end
             
           elseif player.side == "right" then
@@ -650,12 +661,16 @@ end
               
               player.state = "normal"
               
+              player.climbtimer = player.climbstand
+              
             end
             
           end
           
         end
         
+      end
+      
       end
       
     end
